@@ -1,6 +1,6 @@
 # Pico 2 W + Pimoroni Display Pack 2.0 Game Console
 
-A simple game console framework for the Raspberry Pi Pico 2 W (RP2350) with a Pico Display 2.0.
+A simple game console framework for the Raspberry Pi Pico 2 W (RP2350) with a Pico Display 2.0 from Pimoroni.
 
 ## Games Included
 

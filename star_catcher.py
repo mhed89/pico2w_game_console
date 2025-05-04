@@ -71,10 +71,8 @@ star_interval = 0
 # --- Double Click Exit Logic Variables ---
 last_x_press_time = 0
 x_pressed_waiting_for_second = False
-DOUBLE_CLICK_INTERVAL_MS = 300 # Milliseconds for double click detection
+DOUBLE_CLICK_INTERVAL_MS = 300
 
-# --- Game Functions ---
-# (reset_game, draw_player, add_star, move_stars, draw_stars, check_collisions, draw_ui, draw_game_over remain unchanged)
 def reset_game():
     global player_x, score, level, game_speed, stars_collected_this_level
     global stars, lives, missed_stars_count, game_state, last_star_time, star_interval
@@ -187,7 +185,6 @@ def check_collisions():
                 collided_this_frame = True
                 if stars_collected_this_level >= STARS_PER_LEVEL:
                     level += 1
-                    # Speed increase DISABLED
                     stars_collected_this_level = 0
                     print(f"Ny nivå! Nådde nivå {level}, Hastighet: {game_speed}")
         else:
@@ -239,86 +236,58 @@ def draw_game_over():
     display.text(score_text, score_x, score_y, scale=text_scale_medium)
     display.text(restart_text, restart_x, restart_y, scale=text_scale_medium)
 
-# --- MODIFIED FUNCTION ---
 def draw_title_screen():
-    """Displays the title screen in Swedish, adjusted centering."""
     display.set_pen(CYAN)
-    title_text = "Stjärnfångare" # Removed "!"
+    title_text = "Stjärnfångare"
     start_text = "Tryck A för att Starta"
     text_scale_title = 4
     text_scale_start = 2
 
-    # Calculate width and basic center position
     title_width = display.measure_text(title_text, scale=text_scale_title)
     start_width = display.measure_text(start_text, scale=text_scale_start)
     base_title_x = (WIDTH - title_width) // 2
     title_y = HEIGHT // 3
 
-    # --- Apply manual offset for better visual centering ---
-    center_offset = 3 # Adjust this value as needed (positive shifts right)
+    center_offset = 3
     title_x = base_title_x + center_offset
 
     start_x = (WIDTH - start_width) // 2
     start_y = title_y + (8 * text_scale_title) + 30
 
-    # Draw text at adjusted position
     display.text(title_text, title_x, title_y, scale=text_scale_title)
     display.set_pen(YELLOW)
     display.text(start_text, start_x, start_y, scale=text_scale_start)
 
-    # Draw ship
     title_ship_x = WIDTH // 2 - PLAYER_WIDTH // 2
     title_ship_y = start_y + (8 * text_scale_start) + 20
     draw_player(title_ship_x, title_ship_y)
 
-
-# --- Main Game Loop ---
 while True:
-    current_time_ms = time.ticks_ms() # Get current time once per loop
+    current_time_ms = time.ticks_ms()
 
-    # --- Double Click Exit Check (Applies in PLAYING and GAME_OVER states) ---
     if game_state == STATE_PLAYING or game_state == STATE_GAME_OVER:
-        if button_x.value() == 0: # Button X is pressed
+        if button_x.value() == 0:
             if not x_pressed_waiting_for_second:
-                # First press, record time and set flag
                 last_x_press_time = current_time_ms
                 x_pressed_waiting_for_second = True
-                # print("X first press") # Debug
-            # else: Button is still held down from first press, do nothing
-        else: # Button X is released
+        else:
             if x_pressed_waiting_for_second:
-                # Button was just released after the first press
                 if time.ticks_diff(current_time_ms, last_x_press_time) < DOUBLE_CLICK_INTERVAL_MS:
-                    # This release is potentially the end of the first click in a double click
-                    # Keep waiting for the second press
-                    # print("X released, waiting for second press") # Debug
-                    pass # Keep x_pressed_waiting_for_second = True
+                    pass
                 else:
-                    # Too long since first press, reset flag
                     x_pressed_waiting_for_second = False
-                    # print("X released, too long, reset") # Debug
 
-        # Check for the *second* press after the first release within the interval
         if x_pressed_waiting_for_second and button_x.value() == 0:
-             # Is this the second press? Check time since the *first* press started
              if time.ticks_diff(current_time_ms, last_x_press_time) < DOUBLE_CLICK_INTERVAL_MS:
-                 # Double click detected!
                  print("X Double Click: Exiting game!")
-                 break # Exit the main while loop
+                 break
              else:
-                 # This press is too late to be a double click, treat as a new first press
                  last_x_press_time = current_time_ms
-                 # print("X second press too late, treat as new first") # Debug
-                 # x_pressed_waiting_for_second remains True
 
-    # Reset double click state if too much time passes after first press release
-    if x_pressed_waiting_for_second and button_x.value() == 1: # If released
+    if x_pressed_waiting_for_second and button_x.value() == 1:
         if time.ticks_diff(current_time_ms, last_x_press_time) >= DOUBLE_CLICK_INTERVAL_MS:
              x_pressed_waiting_for_second = False
-             # print("X reset timeout") # Debug
 
-
-    # --- State: Title Screen ---
     if game_state == STATE_TITLE:
         if button_a.value() == 0:
             print("Startar spel!")
@@ -328,16 +297,13 @@ while True:
             continue
         display.set_pen(BLACK)
         display.clear()
-        draw_title_screen() # Draws adjusted title
+        draw_title_screen()
 
-    # --- State: Playing ---
     elif game_state == STATE_PLAYING:
-        # Handle Input (Movement)
         if button_b.value() == 0: player_x -= PLAYER_SPEED
         if button_y.value() == 0: player_x += PLAYER_SPEED
         player_x = max(0, min(player_x, WIDTH - PLAYER_WIDTH))
 
-        # Update State
         life_lost_event = move_stars()
         if life_lost_event and lives <= 0:
             game_state = STATE_GAME_OVER
@@ -352,36 +318,28 @@ while True:
             add_star()
             last_star_time = current_time
 
-        # Drawing
         display.set_pen(BLACK)
         display.clear()
         draw_player(player_x, PLAYER_START_Y_GLOBAL)
         draw_stars()
         draw_ui()
 
-    # --- State: Game Over ---
     elif game_state == STATE_GAME_OVER:
-        # Check for restart first
         if button_a.value() == 0:
             print("Återgår till titelskärm")
             game_state = STATE_TITLE
-            x_pressed_waiting_for_second = False # Reset exit state too
+            x_pressed_waiting_for_second = False
             time.sleep(0.2)
             continue
-        # Display game over (double click check happens above)
         display.set_pen(BLACK)
         display.clear()
         draw_game_over()
 
-    # Update Display
     display.update()
 
-    # Frame Rate Control
     time.sleep(0.02)
 
-# --- End of Game ---
 print("Star Catcher game loop finished.")
-# Cleanup if needed (though main.py handles GC)
 display.set_pen(BLACK)
 display.clear()
 display.update()
