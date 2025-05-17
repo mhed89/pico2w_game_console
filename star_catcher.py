@@ -79,14 +79,14 @@ def reset_game():
     player_x = WIDTH // 2 - PLAYER_WIDTH // 2
     score = 0
     level = 1
-    game_speed = 1
+    game_speed = 2  # Increased from 1 to 2 for faster stars
     stars_collected_this_level = 0
     stars = []
     lives = MAX_LIVES
     missed_stars_count = 0
     last_star_time = time.ticks_ms()
     star_interval = initial_star_interval
-    print("Spelet återställt! Hastighet låst till 1.")
+    print("Spelet återställt! Hastighet låst till 2.")
 
 def draw_player(x, y_base):
     center_x = x + PLAYER_WIDTH // 2
@@ -186,6 +186,7 @@ def check_collisions():
                 if stars_collected_this_level >= STARS_PER_LEVEL:
                     level += 1
                     stars_collected_this_level = 0
+                    game_speed += 1  # Increase star speed each level
                     print(f"Ny nivå! Nådde nivå {level}, Hastighet: {game_speed}")
         else:
             remaining_stars.append([star_x, star_y])
